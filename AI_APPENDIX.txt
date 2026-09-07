@@ -1,0 +1,123 @@
+================================================================================
+APÊNDICE - USO DE FERRAMENTA DE IA (Claude - Anthropic)
+================================================================================
+Disciplina: Inteligência Computacional Aplicada
+Trabalho: Homework 1 - Wine Quality (UCI)
+Autores: Iuri Fernandes, Jonas Albuquerque, João Otávio
+
+Abaixo, documentamos os prompts utilizados e as respostas sintetizadas obtidas
+durante o desenvolvimento do trabalho.
+
+================================================================================
+
+PROMPT:
+"Preciso entender o enunciado do HW1. São 5 itens: descrição do dataset,
+univariada incondicional, univariada condicional, bivariada e PCA. Minha dúvida
+é: devo rodar a análise juntando tinto e branco ou separadamente? E como
+discretizar a variável quality?"
+
+RESPOSTA SINTETIZADA:
+Devem ser analisados separadamente, pois o UCI fornece dois arquivos
+independentes (winequality-red.csv e winequality-white.csv). Além disso, a
+química do tinto e do branco são diferentes, o que torna a análise comparativa
+mais rica. Para a discretização, use a lógica: Baixa (quality ≤ 4), Média (5-6)
+e Alta (≥ 7). Isso gera L=3 classes balanceadas o suficiente para análises
+estatísticas, embora a classe média seja majoritária.
+
+================================================================================
+
+PROMPT:
+"Estou tendo um erro no meu código ao gerar os scatter plots bivariados:
+`KeyError: 'class'`. O que pode estar acontecendo? Uso pandas e adicionei a
+coluna 'class' baseada na discretização da qualidade."
+
+RESPOSTA SINTETIZADA:
+Provavelmente você está tentando acessar a coluna 'class' antes de chamar a
+função `add_class_labels(df)` no pipeline. Verifique a ordem das chamadas no
+seu script: primeiro carregue o CSV, depois aplique o `pd.cut()` para criar a
+coluna 'class'. Se você estiver iterando sobre um dicionário ou cópia do
+DataFrame, certifique-se de usar `df = df.copy()` antes de modificar. Além
+disso, confirme se a variável 'quality' existe no dataset original (ela é
+a última coluna do CSV).
+
+================================================================================
+
+PROMPT:
+"Estou com um erro na PCA manual: `numpy.linalg.LinAlgError: Matrix is not
+positive definite`. Sei que a matriz de covariância deveria ser simétrica e
+positiva definida. O que pode estar causando isso?"
+
+RESPOSTA SINTETIZADA:
+Isso geralmente acontece por três motivos:
+1. Colunas com variância zero (constantes) - improvável no Wine Quality, mas
+   verifique se há algum preditor com desvio padrão muito próximo de 0.
+2. Presença de valores NaN ou infinitos nos dados - use `df.isna().sum()`.
+3. Multicolinearidade perfeita (duas variáveis perfeitamente correlacionadas)
+   - embora as correlações sejam fortes (ex: fixed acidity e density), não são
+   perfeitas. O erro mais provável é você estar calculando a covariância com
+   `ddof=0` (populacional) em vez de `ddof=1` (amostral) - isso pode tornar a
+   matriz singular numericamente. Use `np.cov(X_std, rowvar=False, ddof=1)` ou
+   faça manualmente com `(X_std.T @ X_std) / (N - 1)`.
+
+================================================================================
+
+PROMPT:
+"Preciso formatar as tabelas grandes (Tabela II com 11 preditores e Tabela III
+com classes) no LaTeX para o template IEEE. Como faço para não estourar as
+margens, já que são muitas colunas?"
+
+RESPOSTA SINTETIZADA:
+Use o ambiente `table*` (duas colunas) para tabelas largas. Para a Tabela II,
+use `\small` ou `\footnotesize` dentro da tabela para reduzir a fonte. 
+Distribua as 11 variáveis em colunas compactas (ex: 3 colunas de variáveis com
+média/desvio/assimetria lado a lado). Exemplo:
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr|rrr|rrr|r}
+...
+\end{tabular}
+\caption{Estatísticas incondicionais...}
+\end{table}
+
+Para a Tabela III (condicional), organize como 3 blocos (Baixa, Média, Alta),
+cada um com as 11 variáveis. Se ainda assim ficar apertado, vire a tabela para
+paisagem (`sidewaystable` do pacote `rotating`).
+
+================================================================================
+
+PROMPT:
+"Valide nossa interpretação da PCA. No tinto, a PC1 (28,2%) é carregada por
+fixed acidity (-0,49) e pH (0,44). No branco, a PC1 (29,3%) é carregada por
+density (0,51) e residual sugar (0,43). Isso está coerente com a matriz de
+correlação que encontramos? E por que a projeção 2D não separa as classes?"
+
+RESPOSTA SINTETIZADA:
+Totalmente coerente. A correlação de -0,68 entre fixed acidity e pH justifica
+a PC1 do tinto ser um eixo de acidez. No branco, a correlação de 0,84 entre
+density e residual sugar, e -0,78 entre density e alcohol, justificam a PC1
+ser um eixo de doçura/fermentação. A projeção 2D não separa as classes porque
+a variância explicada acumulada é de apenas ~45% para ambos os vinhos.
+Isso significa que mais da metade da informação está nas outras 9 dimensões.
+Portanto, a sobreposição de classes no gráfico não significa que elas são
+inseparáveis na vida real, apenas que não são linearmente separáveis nas duas
+principais direções de variância.
+
+================================================================================
+
+PROMPT:
+"Preciso revisar a formatação do nosso artigo IEEE. O abstract está muito
+grande? E como citar corretamente o dataset do UCI e o artigo do Cortez et al.?"
+
+RESPOSTA SINTETIZADA:
+O abstract do IEEE normalmente tem entre 150-250 palavras. Se estiver maior,
+corte repetições e mantenha apenas: objetivo, métodos (EDA + PCA manual),
+principais resultados (álcool é o melhor separador, acidez domina no tinto,
+doçura domina no branco) e conclusão (necessidade de modelos separados).
+Para a citação: use o @article do Cortez et al. (2009) no BibTeX. O dataset
+UCI deve ser citado como: "Dua, D. and Graff, C. (2019). UCI Machine Learning
+Repository [http://archive.ics.uci.edu/ml]. Irvine, CA: University of
+California, School of Information and Computer Science."
+
+================================================================================
